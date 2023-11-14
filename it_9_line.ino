@@ -30,7 +30,7 @@ int ultraSoundDistance = 50;
 int timeOfFlightDistance = 0;
 
 int smallLoop[23] = {1,1,4,1,1,3,1,3,1,1,1,1,3,1,3,1,1,3,1,4,1,1,3};
-int bigLoop[8] = {1,3,1,3,1,3,1,1}
+int bigLoop[8] = {1,3,1,3,1,3,1,1};
 
 bool gridMode = true;
 bool blockMagnetic = true;
@@ -162,7 +162,8 @@ void grid(){
       }
       currentNodeDetectTime = millis();
     }
-  } gridMode = false;
+  }
+  gridMode = false;
 }
 
 /*
