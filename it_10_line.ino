@@ -63,6 +63,7 @@ void setup(){
 
 void loop(){
   Serial.print("Distance: "); Serial.println(sensor.getDistance());
+  delay(500);
   unsigned long currentTime = millis();
   if((currentTime - previousTime > 500) and moving) {
     previousTime = currentTime;
