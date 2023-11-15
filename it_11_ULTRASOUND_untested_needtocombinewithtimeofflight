@@ -274,14 +274,10 @@ void field(){
 }
 
 void collectBlockInField(){
-  while(leftFrontLine == HIGH and rightFrontLine == HIGH){
-    motor(3,200); //turn right until off line
-    leftFrontLine = digitalRead(leftFrontLinePin);
-    rightFrontLine = digitalRead(rightFrontLinePin);
-  }while(leftBackLine == LOW or rightBackLine == LOW){
+  while(leftBackLine == LOW or rightBackLine == LOW){
     motor(3,200); //turn right until on new line
-    leftFrontLine = digitalRead(leftFrontLinePin);
-    rightFrontLine = digitalRead(rightFrontLinePin);
+    leftFrontLine = digitalRead(leftBackLinePin);
+    rightFrontLine = digitalRead(rightBackLinePin);
   }
 }
 
