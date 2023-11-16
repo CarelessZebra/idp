@@ -9,7 +9,7 @@ Adafruit_DCMotor *motor1 = AFMS.getMotor(3);
 Adafruit_DCMotor *motor2 = AFMS.getMotor(2);
 bool moving = false;
 bool detecting = false;
-bool gridMode = false;
+bool gridMode = true;
 bool blockMagnetic = true;
 
 int leftFrontLinePin = 0;
@@ -218,6 +218,7 @@ void scan_field(){
 void field(){
   int i = 0;
   Serial.println("While loop");
+  Serial.println(i);
   while(i < 8 and bigLoop[i] == 1){
     leftBackLine = digitalRead(leftBackLinePin);
     rightBackLine = digitalRead(rightBackLinePin);
@@ -228,6 +229,7 @@ void field(){
 
     if(i == 3){
       detecting = true;
+      Serial.println("Detecting");
     } else{
       detecting = false;
     }
