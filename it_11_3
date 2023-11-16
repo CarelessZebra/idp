@@ -80,10 +80,9 @@ void loop(){
 }
 
 int ultrasound_average(){
-    /*
     sensity_t = analogRead(ultraSoundPin);
     dist_t = sensity_t * MAX_RANG / ADC_SOLUTION;//
-    
+    /*
     ultraSoundReadings.pushback(dist_t);
     auto it = ultraSoundReadings.begin(); 
     ultraSoundReadings.erase(it);
