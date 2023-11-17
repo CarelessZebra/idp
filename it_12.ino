@@ -47,6 +47,7 @@ void setup(){
     Serial.println("Could not find Motor Shield. Check wiring.");
   while (1);
   }
+  //set up pins
   pinMode(ledB, OUTPUT);
   pinMode(ledR, OUTPUT);
   pinMode(magnetPin, INPUT);
@@ -55,7 +56,9 @@ void setup(){
   pinMode(leftBackLine, INPUT);
   pinMode(rightBackLine, INPUT);
   pinMode(buttonPin, INPUT);
+  //wait until button is pressed before continuing
   while (digitalRead(buttonPin) == LOW) {}
+  //set up tof sensor
   Wire.begin();
   sensor.begin(0x50);
   sensor.setMode(sensor.eContinuous, sensor.eHigh);
@@ -63,8 +66,6 @@ void setup(){
 }
 
 void loop(){
-  Serial.print("Distance: "); Serial.println(sensor.getDistance());
-  delay(500);
   unsigned long currentTime = millis();
   if((currentTime - previousTime > 500) and moving) {
     previousTime = currentTime;
@@ -86,15 +87,18 @@ void loop(){
 }
 
 void lineFollow(){
+  //get state of each line sensor
     leftFrontLine = digitalRead(leftFrontLinePin);
     rightFrontLine = digitalRead(rightFrontLinePin);
     leftBackLine = digitalRead(leftBackLinePin);
     rightBackLine = digitalRead(rightBackLinePin);
     
+    //move forward if on the line completely
     if(leftFrontLine == HIGH and rightFrontLine == HIGH){
       motor(1, 200);
       moving = true;
     }     
+    //if goes off line to the left then slow down right motor
     else if(leftFrontLine == LOW and rightFrontLine == HIGH){
         motor1->run(FORWARD);
         motor2->run(FORWARD);
@@ -102,6 +106,7 @@ void lineFollow(){
         motor1->setSpeed(225);
         moving = true;
      }
+     //vice versa
     else if(leftFrontLine == HIGH and rightFrontLine == LOW){
         motor1->run(FORWARD);
         motor2->run(FORWARD);
@@ -120,17 +125,18 @@ void lock_onto_block(){
 
 void grid(){
   //assumes starting in starting box facing towards field
-  // NEXT: implement scanning for blocks en route, dropping off blocks, ending up in centre of long edge of field after both blocks dropped off
   int i = 0;
   Serial.println("While loop");
+  //while loop basically iterates through an array containing the instructions for what to do at each node
   while(i < 23 and smallLoop[i] == 1 and stop == false){
+    //get sensor readings
     leftBackLine = digitalRead(leftBackLinePin);
     rightBackLine = digitalRead(rightBackLinePin);
     leftFrontLine = digitalRead(leftFrontLinePin);
     rightFrontLine = digitalRead(rightFrontLinePin);
     lineFollow();
     Serial.println(sensor.getDistance());
-    
+    //if a block is detected, set by threshold timeOfFlightDistance then stop and execute the return block function
     if (sensor.getDistance() <= timeOfFlightDistance)
     {
       /*
@@ -145,19 +151,17 @@ void grid(){
       motor(0,0);
       delay(2000);
       return_block(i);
-      
+      //break out of while loop when the block is returned
       break;
     }
-
+    //get current time
     unsigned long currentNodeDetectTime = millis();
 
+    //if back sensors cross line and sufficient time has passed, detect a node
     if((leftBackLine == HIGH or rightBackLine == HIGH) and currentNodeDetectTime - lastNodeDetectTime > 1600) {
       lastNodeDetectTime = currentNodeDetectTime;
       currentNodeDetectTime = millis();
-      Serial.print(currentNodeDetectTime);
-      Serial.print(" ");
-      Serial.print(smallLoop[i]);
-      Serial.println(" ");
+      //go to next instruction, wll be a turn direction in the form of a number
       i++;
       if (smallLoop[i]==3){ // turn right
          while(leftFrontLine == HIGH and rightFrontLine == HIGH){
@@ -169,27 +173,21 @@ void grid(){
           leftFrontLine = digitalRead(leftFrontLinePin);
           rightFrontLine = digitalRead(rightFrontLinePin);
          }
-          currentNodeDetectTime = millis();
-          Serial.print(currentNodeDetectTime);
-          Serial.print(" ");
-          Serial.print(smallLoop[i]);
-          Serial.println(" ");
+          currentNodeDetectTime = millis();#
+          //go to next instruction, will be line following (1)
           i++;
       } else if (smallLoop[i]==4){ // turn left
-         while(leftFrontLine == HIGH and rightFrontLine == HIGH){
+         while(leftFrontLine == HIGH and rightFrontLine == HIGH){ //turn left until off line
           motor(4,200);
           leftFrontLine = digitalRead(leftFrontLinePin);
           rightFrontLine = digitalRead(rightFrontLinePin);
-         } while(leftFrontLine == LOW or rightFrontLine == LOW){
+         } while(leftFrontLine == LOW or rightFrontLine == LOW){ //turn left until on new line
           motor(4,200);
           leftFrontLine = digitalRead(leftFrontLinePin);
           rightFrontLine = digitalRead(rightFrontLinePin);
          } 
          currentNodeDetectTime = millis();
-         Serial.print(currentNodeDetectTime);
-         Serial.print(" ");
-         Serial.print(smallLoop[i]);
-         Serial.println(" ");
+         //go to next instruction, will be line following (1)
          i++;
       }
       currentNodeDetectTime = millis();
@@ -198,39 +196,19 @@ void grid(){
   gridMode = false;
 }
 
-/*
-void scan_field(){
-  //assumes starting at centre of edge of field
-  while(leftFrontLine == LOW or rightFrontLine == LOW){
-    motor(4,200); 
-    leftFrontLine = digitalRead(leftFrontLinePin);
-    rightFrontLine = digitalRead(rightFrontLinePin);
-  } 
-  //scan from left to right
-  while(leftFrontLine == HIGH and rightFrontLine == HIGH and ultraSoundDistance > 170){
-    motor(3,100); //slower than usual turn
-    leftFrontLine = digitalRead(leftFrontLinePin);
-    rightFrontLine = digitalRead(rightFrontLinePin);
-  } while(leftFrontLine == LOW or rightFrontLine == LOW and ultraSoundDistance > 170){
-    motor(3,100);
-    leftFrontLine = digitalRead(leftFrontLinePin);
-    rightFrontLine = digitalRead(rightFrontLinePin);
-  }
-}
-*/
 
 void return_block(int i){
-  Serial.println(i);
-  Serial.println(smallLoop[i]);
-  //magnet test
+  //magnet test - delay exists to ensure block is under magnet sensor, don't remove this delay
   delay(200);
   magnet_test();
 
   //180 turn
+  //turns a ways off the line >90 deg
   motor(3,200);
   delay(1000);
   leftFrontLine = digitalRead(leftFrontLinePin);
   rightFrontLine = digitalRead(rightFrontLinePin);
+  //keeps turning until it has hit a line and thus turned 180
   while(leftFrontLine == LOW and rightFrontLine == LOW)
   {
     motor(3,200);
@@ -238,7 +216,7 @@ void return_block(int i){
     rightFrontLine = digitalRead(rightFrontLinePin);
   }
   motor(0,0);
-  //back to start
+  //back to start, iterates backwards through grid array
   while(i>1 and smallLoop[i]==1){
     leftBackLine = digitalRead(leftBackLinePin);
     rightBackLine = digitalRead(rightBackLinePin);
@@ -280,14 +258,17 @@ void return_block(int i){
     }
   }
   unsigned long prevTime = millis();
+  //line follows for a bit along the line coming out the start box
   while(millis() - prevTime < 2000){
     lineFollow();
   }
+  //goes forward a bit until in the box
   motor(1,200);
   delay(2300);
   motor(0,0);
   //delay(2000000);
   delay(1000);
+  //turns towards the right box to put the block in
   if (blockMagnetic == true)
   {
     motor(3, 200);
@@ -296,8 +277,10 @@ void return_block(int i){
   {
     motor(4, 200);
   }
+  
   delay(1700);
   motor(0,0);
+  //goes forward until in new box
   leftBackLine = digitalRead(leftBackLinePin);
   rightBackLine = digitalRead(rightBackLinePin);
   motor(1,200);
@@ -310,6 +293,7 @@ void return_block(int i){
   }
   motor(0,0);
   delay(500);
+  //reverses until back at start box
   leftFrontLine = digitalRead(leftFrontLinePin);
   rightFrontLine = digitalRead(rightFrontLinePin);
   motor(2,200);
@@ -341,10 +325,6 @@ void field(){
     if((leftBackLine == HIGH or rightBackLine == HIGH) and currentNodeDetectTime - lastNodeDetectTime > 1600) {
       lastNodeDetectTime = currentNodeDetectTime;
       currentNodeDetectTime = millis();
-      Serial.print(currentNodeDetectTime);
-      Serial.print(" ");
-      Serial.print(bigLoop[i]);
-      Serial.println(" ");
       i++;
       if (bigLoop[i]==3){ // turn right
          while(leftFrontLine == HIGH and rightFrontLine == HIGH){
@@ -357,10 +337,6 @@ void field(){
           rightFrontLine = digitalRead(rightFrontLinePin);
          }
           currentNodeDetectTime = millis();
-          Serial.print(currentNodeDetectTime);
-          Serial.print(" ");
-          Serial.print(bigLoop[i]);
-          Serial.println(" ");
           i++;
       } else if (bigLoop[i]==4){ // turn left
          while(leftFrontLine == HIGH and rightFrontLine == HIGH){
@@ -373,10 +349,6 @@ void field(){
           rightFrontLine = digitalRead(rightFrontLinePin);
          } 
          currentNodeDetectTime = millis();
-         Serial.print(currentNodeDetectTime);
-         Serial.print(" ");
-         Serial.print(bigLoop[i]);
-         Serial.println(" ");
          i++;
       }
       currentNodeDetectTime = millis();
@@ -386,26 +358,13 @@ void field(){
 
 
 void speeed_up(int speeed){
-  /*
-  uint8_t i;
-  for (i=0; i<speeed; i++) {
-     motor1->setSpeed(i);
-     motor2->setSpeed(i);
-     delay(10);
-  }
-  for (i=speeed;i>0;i--) {
-     motor1->setSpeed(i);
-     motor2->setSpeed(i);
-     delay(10);
-  }
-  */
+  //this is the most useluss function ever written, but i love it and will not remove it, technically it saves 1 line of code total
      motor1->setSpeed(speeed);
      motor2->setSpeed(speeed);
 }
 
 void motor(int dir,int speeed){
- // motor1->setSpeed(speeed);
- // motor2->setSpeed(speeed);
+ //switches on the integer direction indicating the desired direction
   switch (dir){
     case 0: //OFF
       motor1->run(RELEASE);
@@ -432,21 +391,12 @@ void motor(int dir,int speeed){
       speeed_up(speeed);
       break;
   }
+  //sets boolean moving which will be used for the blinking blinking blue light
   if (dir != 0){
     moving = true;
   }else{
     moving = false;
   }
-  /*
-  if(dir == 0){
-  motor1->run(RELEASE);
-  motor2->run(RELEASE);
-}
-
-  if(dir == 1){
-  motor1->run(FORWARD);
-  motor2->run(FORWARD);
-  */
 }  
 
 void magnet_test(){
@@ -460,6 +410,7 @@ void magnet_test(){
     digitalWrite(ledG,HIGH);
     blockMagnetic = false;
   }
+  //stops, waits 6 seconds with the relevant LED on, then turns both LEDs off
   motor(0,200);
   delay(6000);
   digitalWrite(ledR,LOW);
