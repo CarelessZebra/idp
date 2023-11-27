@@ -327,12 +327,12 @@ void return_block(int i){
   if (blockMagnetic == true) //turns towards the red box to put the block in
   {
     motor(3, 200);
-    delay(1400);
+    delay(1200);
   }
   else  // turns towards green box to put block in
   {
     motor(4, 200);
-    delay(1600);
+    delay(1500);
   }
   
   //delay(1400);
@@ -341,7 +341,7 @@ void return_block(int i){
   // after turning, we move forwards until at least one of the front line sensors are on
   leftBackLine = digitalRead(leftBackLinePin);
   rightBackLine = digitalRead(rightBackLinePin);
-  while(leftBackLine == 0 or rightBackLine == 0){
+  while(leftBackLine == LOW and rightBackLine == LOW){
     motor1->run(FORWARD);
     motor2->run(FORWARD);
     motor1->setSpeed(255);
@@ -353,15 +353,19 @@ void return_block(int i){
   leftBackLine = digitalRead(leftBackLinePin);
   rightBackLine = digitalRead(rightBackLinePin);
   // Add correction when hits white line of white box so that it is straight
+  Serial.println(leftBackLine);
+  Serial.println(rightBackLine);
   while(leftBackLine == HIGH and rightBackLine == LOW){
-    motor(3,75);
+    Serial.println("correction");
+    motor(4,100);
     leftBackLine = digitalRead(leftBackLinePin);
     rightBackLine = digitalRead(rightBackLinePin);
     //delay(100);
   }
   // Add correction when hits white line of white box so that it is straight
   while(leftBackLine == LOW and rightBackLine == HIGH){
-    motor(4,75);
+    Serial.println("correction");
+    motor(3,100);
     leftBackLine = digitalRead(leftBackLinePin);
     rightBackLine = digitalRead(rightBackLinePin);
     //delay(100);
@@ -383,6 +387,7 @@ void return_block(int i){
   delay(4000);
   leftBackLine = digitalRead(leftBackLinePin);
   rightBackLine = digitalRead(rightBackLinePin);
+  
   while (leftBackLine == LOW && rightBackLine == LOW)
   {
     leftBackLine = digitalRead(leftBackLinePin);
@@ -409,12 +414,13 @@ void return_block(int i){
     motor1->setSpeed(240);
     motor2->setSpeed(225);
   }
+  Serial.println("back at start box");
   motor(0,0);
   delay(500);
   // rotates until one of the front line sensors detects HIGH i.e. back almost parallel to start box white line
   leftFrontLine = digitalRead(leftFrontLinePin);
   rightFrontLine = digitalRead(rightFrontLinePin);
-  while (leftFrontLine == LOW && rightFrontLine == LOW)
+  while (leftFrontLine == LOW or rightFrontLine == LOW)
   {
     leftFrontLine = digitalRead(leftFrontLinePin);
     rightFrontLine = digitalRead(rightFrontLinePin);
@@ -427,12 +433,20 @@ void return_block(int i){
       motor(4,200);
     }
   }
+  Serial.println("rotated onto edge");
   motor(0,0);
   delay(200);
 
   // line follows this start box line until one of the back line sensors turns HIGH
   leftBackLine = digitalRead(leftBackLinePin);
   rightBackLine = digitalRead(rightBackLinePin);
+  /*
+  prevTime = millis();
+  //line follows for a bit along the line coming out the start box (for 3.5s) until going straight
+  while(millis() - prevTime < 3500){
+    blink();
+    lineFollow();
+  }*/
   while (leftBackLine == LOW && rightBackLine == LOW)
   {
     lineFollow();
@@ -440,6 +454,7 @@ void return_block(int i){
     rightBackLine = digitalRead(rightBackLinePin);
   }
   motor(0,0);
+  Serial.println("At corner");
   //delay(20000);
   
   int turnDir;  // determines the direction we need to turn depending on the state of blockMagentic
@@ -483,7 +498,7 @@ void return_block(int i){
   // then continues rotating until we are incident on the line out of the start box
   leftFrontLine = digitalRead(leftFrontLinePin);
   rightFrontLine = digitalRead(rightFrontLinePin);
-  while(leftFrontLine == LOW and rightFrontLine == LOW){
+  while(leftFrontLine == LOW or rightFrontLine == LOW){
     motor(turnDir, 200);
     leftFrontLine = digitalRead(leftFrontLinePin);
     rightFrontLine = digitalRead(rightFrontLinePin);
@@ -491,17 +506,21 @@ void return_block(int i){
   motor(0,0);
   delay(200);
   
-  // line follows for 0.3s to get it parallel to this line
+  // line follows for 2s to get it parallel to this line
   delay1 = millis();
-  while(millis() - delay1 < 300){
+  while(millis() - delay1 < 2000){
     lineFollow();
   }
   motor(0,0);
   delay(500);
   // reverse until we are in start box fully
-  motor(2,200);
-  delay(2000);
-  motor(0,0);
+  leftBackLine = digitalRead(leftBackLinePin);
+  rightBackLine = digitalRead(rightBackLinePin);
+  while(!(leftBackLine == HIGH and rightBackLine == HIGH)){
+   leftBackLine = digitalRead(leftBackLinePin);
+    rightBackLine = digitalRead(rightBackLinePin);
+    motor(2,200);
+  }
   delay(1000);
 
   // NEED TO ADD BLUE LIGHT TURNING ON FOR 6 SECONDS
@@ -532,7 +551,7 @@ void return_block(int i){
   lineFollow();
   delay(1000);
   */
-
+  motor(0,0);
   if (blockCount == 1)
   {
     digitalWrite(ledB, HIGH);
@@ -543,6 +562,9 @@ void return_block(int i){
     delay(1000);
   }
   digitalWrite(ledB, LOW);
+
+  motor(1,200);
+  delay(700);
   //delay(2000);
   /*
   if (blockMagnetic == true)
